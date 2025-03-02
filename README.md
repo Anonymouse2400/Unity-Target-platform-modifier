@@ -1,4 +1,4 @@
-# Target-platform-changer 
+# UNITY-Target-platform-modifier 
 Experimental python script that changes the target platform from windows to android only for unity 5.5.5f1 you might encounter shader getting pinks because android cant handle dx3d shader it only can handle opengl mobile shader so use with caution. You might need to rebuild the shader by extracting with tools likes assetripper 
 1.It finds the hex base of target platform and changed it
 2. It uses current bundle id to know it its not encrypted
