@@ -12,3 +12,4 @@ how to use the script :
  be sure to type on the cmd python assetbundle_converter.py on your current folder or just click the file script jsut be sured you sintall python 3
 
  THIS IS TO CONVERT THE CURRENT ASSET BUNDLE FROM WINDOWS(64) TO ANDROID . YOUR CURRENT ASSET BUNDLE MUST NOT BE ENCRYPTED  AND CAN BE EXTRACTED WITH ASSETRIPPER.
+ PLEASE HAVE A BACKUP OF YOUR ASSETBUNDLE FIRST BEFORE MODIFYING.
