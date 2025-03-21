@@ -19,7 +19,7 @@ def find_bundle_id(asset_path):
         return match.group(0).decode('utf-8') if match else "Not Found"
     except Exception as e:
         return str(e)
-        
+
 def find_current_platform(asset_path):
     try:
         with open(asset_path, "rb") as file:
@@ -30,10 +30,6 @@ def find_current_platform(asset_path):
         return "Unknown"
     except Exception as e:
         return str(e)
-        
-def copy_bundle_id():
-    pyperclip.copy(entry_bundle_id.get())
-    messagebox.showinfo("Copied", "Bundle ID copied to clipboard!")
 
 def modify_platform(asset_path, old_platform, new_platform):
     try:
@@ -41,69 +37,65 @@ def modify_platform(asset_path, old_platform, new_platform):
             data = file.read()
         
         if PLATFORM_SIGNATURES[old_platform] not in data:
-            return "Platform signature not found. Ensure the correct platform is selected."
+            return f"Platform signature not found in {os.path.basename(asset_path)}."
         
         modified_data = data.replace(PLATFORM_SIGNATURES[old_platform], PLATFORM_SIGNATURES[new_platform], 1)
         
-        modified_asset_path = asset_path.replace(".unity3d", "_modified.unity3d")
-        with open(modified_asset_path, "wb") as file:
+        with open(asset_path, "wb") as file:
             file.write(modified_data)
         
-        return f"Platform changed successfully! Modified file saved as: {modified_asset_path}"
+        return f"Converted: {os.path.basename(asset_path)}"
     except Exception as e:
-        return str(e)
+        return f"Error processing {os.path.basename(asset_path)}: {e}"
 
-def select_file():
-    file_path = filedialog.askopenfilename(filetypes=[("AssetBundle Files", "*")])
-    
-    entry_file.delete(0, tk.END)
-    entry_file.insert(0, file_path)
-    
-    bundle_id = find_bundle_id(file_path)
-    entry_bundle_id.delete(0, tk.END)
-    entry_bundle_id.insert(0, bundle_id)
-    detected_platform = find_current_platform(file_path)
-    if detected_platform not in PLATFORM_SIGNATURES:
-        detected_platform = "Unknown"
-    platform_var_current.set(detected_platform)
+def select_folder():
+    folder_path = filedialog.askdirectory()
+    if folder_path:
+        entry_folder.delete(0, tk.END)
+        entry_folder.insert(0, folder_path)
+        
+        log_output.delete("1.0", tk.END)
+        log_output.insert(tk.END, "Files to be processed:\n")
+        for file in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file)
+            if os.path.isfile(file_path):
+                log_output.insert(tk.END, f"{file}\n")
 
-def convert_bundle():
-    file_path = entry_file.get()
-    bundle_id = entry_bundle_id.get()
+def batch_convert():
+    folder_path = entry_folder.get()
+    if not folder_path:
+        messagebox.showerror("Error", "Please select a folder!")
+        return
+    
     current_platform = platform_var_current.get()
     target_platform = platform_var_target.get()
     
-    if not file_path or not bundle_id or not current_platform or not target_platform:
-        messagebox.showerror("Error", "Please fill in all fields!")
-        return
+    log_output.delete("1.0", tk.END)
+    log_output.insert(tk.END, "Processing files:\n")
+    success_count = 0
     
-    if current_platform not in PLATFORM_SIGNATURES or target_platform not in PLATFORM_SIGNATURES:
-        messagebox.showerror("Error", "Invalid platform selection!")
-        return
+    for file in os.listdir(folder_path):
+        file_path = os.path.join(folder_path, file)
+        
+        if os.path.isfile(file_path):
+            if current_platform in PLATFORM_SIGNATURES:
+                result = modify_platform(file_path, current_platform, target_platform)
+                log_output.insert(tk.END, result + "\n")
+                success_count += 1
+            else:
+                log_output.insert(tk.END, f"Skipping {file}: Unknown platform\n")
     
-    result = modify_platform(file_path, current_platform, target_platform)
-    messagebox.showinfo("Result", result)
-    
-
+    messagebox.showinfo("Batch Conversion Complete", f"Processed {success_count} files.")
 
 # GUI Setup
 root = tk.Tk()
-root.title("Unity 5.5.5f1 AssetBundle Platform Converter")
-root.geometry("400x350")
+root.title("Batch Unity AssetBundle Converter")
+root.geometry("500x500")
 
-tk.Label(root, text="Select AssetBundle:").pack()
-entry_file = tk.Entry(root, width=50)
-entry_file.pack()
-tk.Button(root, text="Browse", command=select_file).pack()
-
-tk.Label(root, text="Detected Bundle ID:").pack()
-entry_bundle_id = tk.Entry(root, width=50)
-entry_bundle_id.pack()
-tk.Button(root, text="Copy Bundle ID", command=copy_bundle_id).pack()
-
-#tk.Label(root, text="Enter Bundle ID:").pack()
-#entry_bundle_id = tk.Entry(root, width=50)
-#entry_bundle_id.pack()
+tk.Label(root, text="Select AssetBundle Folder:").pack()
+entry_folder = tk.Entry(root, width=50)
+entry_folder.pack()
+tk.Button(root, text="Browse", command=select_folder).pack()
 
 tk.Label(root, text="Select Current Platform:").pack()
 platform_var_current = tk.StringVar(value="StandaloneWindows 5")
@@ -113,8 +105,12 @@ tk.Label(root, text="Select Target Platform:").pack()
 platform_var_target = tk.StringVar(value="Android")
 tk.OptionMenu(root, platform_var_target, "Android").pack()
 
-tk.Label(root, text="Warning: This tool only works for Unity 5.5.5f1 AssetBundles Shaders might not work!", fg="red").pack()
+tk.Label(root, text="Log Output:").pack()
+log_output = tk.Text(root, height=15, width=60)
+log_output.pack()
 
-tk.Button(root, text="Convert", command=convert_bundle).pack()
+tk.Button(root, text="Convert All", command=batch_convert).pack()
+
+tk.Label(root, text="Warning: This tool only works for Unity 5.5.5f1 AssetBundles. Shaders might not work!", fg="red").pack()
 
 root.mainloop()
